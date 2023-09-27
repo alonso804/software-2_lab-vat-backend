@@ -15,13 +15,17 @@ class TaxController {
 
     logger.info(`[TaxController] getTaxes uri: ${uri}`);
 
-    const response = await axios.get(uri, {
-      headers: {
-        authorization: `Bearer ${token}`,
-      },
-    });
-
-    res.status(200).json(response.data);
+    try {
+      const response = await axios.get(uri, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+      res.status(200).json(response.data);
+    } catch (error) {
+      logger.error(`[TaxController] getTaxes error: ${error}`);
+      res.status(500).json({ message: 'Error at sunat API' });
+    }
   }
 }
 
