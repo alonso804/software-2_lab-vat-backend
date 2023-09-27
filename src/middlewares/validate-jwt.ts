@@ -34,7 +34,7 @@ export const validateJwt = (req: Request, res: Response, next: NextFunction): vo
     const decoded = jwt.verify(token, process.env.JWT_SECRET) as jwt.JwtPayload;
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    req.query._id = decoded._id;
+    req.query.userId = decoded.userId;
 
     next();
   } catch (err) {

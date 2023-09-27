@@ -10,6 +10,7 @@ const envVariablesSchema = z.object({
   MONGO_URI: z.string().url(),
   JWT_SECRET: z.string().trim(),
   SUNAT_URI: z.string().url(),
+  SERVER_ID: z.string().trim(),
 });
 
 const parsedEnvVariables = envVariablesSchema.safeParse(process.env);

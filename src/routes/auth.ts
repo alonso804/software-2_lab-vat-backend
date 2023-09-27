@@ -11,4 +11,6 @@ router.post('/signup', validateSchema(signupSchema), AuthController.signup);
 
 router.post('/login', validateSchema(loginSchema), AuthController.login);
 
+router.post('/register-public-key', AuthController.registerPublicKey);
+
 export default router;

@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 export const getTaxesSchema = z.object({
   query: z.object({
-    _id: z.string(),
+    userId: z.string(),
   }),
 });
 
