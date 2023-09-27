@@ -1,19 +1,35 @@
-import { getModelForClass, prop, type ReturnModelType } from '@typegoose/typegoose';
+import type { ReturnModelType } from '@typegoose/typegoose';
+import { getModelForClass, index, prop } from '@typegoose/typegoose';
+import bcrypt from 'bcryptjs';
 import type { Document } from 'mongoose';
 
-export class Test {
+@index({ username: 1 }, { unique: true })
+export class User {
   @prop()
-  name: string;
+  username: string;
 
-  static async findByName(
-    this: ReturnModelType<typeof Test>,
-    name: string,
+  @prop()
+  password: string;
+
+  static async findByUsername(
+    this: ReturnModelType<typeof User>,
+    username: string,
+    project?: Record<string, unknown>,
   ): Promise<TestDocument | null> {
-    return this.findOne({ name });
+    return this.findOne({ username }, project).lean();
+  }
+
+  static async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 10);
+  }
+
+  static async comparePassword(data: { input: string; hash: string }): Promise<boolean> {
+    return bcrypt.compare(data.input, data.hash);
   }
 }
 
-export type TestDocument = Test & Document;
+export type TestDocument = User & Document;
 
-const TestModel = getModelForClass(Test);
-export default TestModel;
+const UserModel = getModelForClass(User);
+
+export default UserModel;
