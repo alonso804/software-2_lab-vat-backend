@@ -3,47 +3,87 @@ import type { Request, Response } from 'express';
 import fs from 'fs/promises';
 import type { LoginRequest } from 'src/dtos/auth/login';
 import type { SignupRequest } from 'src/dtos/auth/signup';
-import { generateJwt } from 'src/helpers/utils';
+import { generateJwt, verifyJwt } from 'src/helpers/utils';
 import { logger } from 'src/logger';
 import UserModel from 'src/models/user';
+import { sendMagicLinkLogin, sendSignupConfirmation } from 'src/services/send-email';
 
 class AuthController {
-  static async login(req: LoginRequest, res: Response): Promise<void> {
-    const { username, password } = req.body;
+  static async login(req: LoginRequest, res: Response): Promise<Response> {
+    const { username } = req.body;
 
     const user = await UserModel.findByUsername(username);
 
     if (!user) {
-      res.status(401).json({ message: 'Invalid username or password' });
-      return;
+      return res.status(401).json({ message: 'Invalid username' });
     }
 
-    const isPasswordValid = await UserModel.comparePassword({
-      input: password,
-      hash: user.password,
-    });
+    await sendMagicLinkLogin(user.email, generateJwt({ userId: user._id }));
 
-    if (!isPasswordValid) {
-      res.status(401).json({ message: 'Invalid username or password' });
-      return;
-    }
-
-    res.json({ username, token: generateJwt({ userId: user._id }) });
+    return res.json({ ok: true });
   }
 
-  static async signup(req: SignupRequest, res: Response): Promise<void> {
-    const { username, password } = req.body;
+  static async confirmLogin(req: Request, res: Response): Promise<Response> {
+    const { token } = req.body as { token: string };
+
+    if (!token) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
 
     try {
-      const hashedPassword = await UserModel.hashPassword(password);
+      const decodedToken = verifyJwt(token) as { userId: string };
 
-      await UserModel.create({ username, password: hashedPassword });
+      const user = await UserModel.findById(decodedToken.userId);
 
-      res.json({ ok: true });
+      if (!user) {
+        return res.status(401).json({ message: 'Invalid token' });
+      }
+
+      return res.status(200).json({ username: user.username, token: token });
     } catch (err) {
       logger.error(err);
 
-      res.json({ ok: false });
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+  }
+
+  static async signup(req: SignupRequest, res: Response): Promise<Response> {
+    const { username, email } = req.body;
+
+    const user = await UserModel.findByUsername(username);
+
+    if (!user) {
+      await sendSignupConfirmation(email, generateJwt({ username, email }));
+
+      return res.status(200).json({ ok: true });
+    }
+
+    return res.status(401).json({ message: 'Invalid username' });
+  }
+
+  static async confirmSignup(req: Request, res: Response): Promise<Response> {
+    const { token } = req.body as { token: string };
+
+    if (!token) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+
+    try {
+      const decodedToken = verifyJwt(token) as { username: string; email: string };
+
+      const user = await UserModel.findByUsername(decodedToken.username);
+
+      if (!user) {
+        await UserModel.create({ username: decodedToken.username, email: decodedToken.email });
+
+        return res.status(200).json({ ok: true });
+      }
+
+      return res.status(401).json({ message: 'Invalid username' });
+    } catch (err) {
+      logger.error(err);
+
+      return res.status(401).json({ message: 'Invalid token' });
     }
   }
 
@@ -58,7 +98,8 @@ class AuthController {
         },
         {
           headers: {
-            authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJJZCI6IjY1MTQ0YTViNWUyMjlhZmZjMGRiOTQ0MSIsImlhdCI6MTY5NTgzMDYwMiwiZXhwIjoxNjk1ODMxNTAyfQ.B8c3OW5ZCFZbp8rckSfFWAlBjwuERLET-KopM014ovE',
+            authorization:
+              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJJZCI6IjY1MTQ0YTViNWUyMjlhZmZjMGRiOTQ0MSIsImlhdCI6MTY5NTgzMDYwMiwiZXhwIjoxNjk1ODMxNTAyfQ.B8c3OW5ZCFZbp8rckSfFWAlBjwuERLET-KopM014ovE',
           },
         },
       );

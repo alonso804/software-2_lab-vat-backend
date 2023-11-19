@@ -9,7 +9,11 @@ const router = Router();
 
 router.post('/signup', validateSchema(signupSchema), AuthController.signup);
 
+router.post('/confirm-signup', AuthController.confirmSignup);
+
 router.post('/login', validateSchema(loginSchema), AuthController.login);
+
+router.post('/confirm-login', AuthController.confirmLogin);
 
 router.post('/register-public-key', AuthController.registerPublicKey);
 

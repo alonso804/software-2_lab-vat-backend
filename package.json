@@ -36,6 +36,7 @@
     "typescript": "5.2.2"
   },
   "dependencies": {
+    "@sendgrid/mail": "7.7.0",
     "@typegoose/typegoose": "11.5.0",
     "axios": "1.5.1",
     "bcryptjs": "2.4.3",
@@ -46,6 +47,8 @@
     "glob": "10.3.4",
     "jsonwebtoken": "9.0.2",
     "mongoose": "7.5.0",
+    "nodemailer": "6.9.7",
+    "redis": "4.6.10",
     "winston": "3.10.0",
     "zod": "3.22.2"
   }

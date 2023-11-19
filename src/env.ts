@@ -11,6 +11,11 @@ const envVariablesSchema = z.object({
   JWT_SECRET: z.string().trim(),
   SUNAT_URI: z.string().url(),
   SERVER_ID: z.string().trim(),
+  REDIS_HOST: z.string().default('127.0.0.1'),
+  REDIS_PORT: z.string().regex(/^\d+$/).default('6379'),
+  SENDGRID_API_KEY: z.string().trim(),
+  SENDGRID_FROM_EMAIL: z.string().email(),
+  FRONTEND_URI: z.string().url().default('http://localhost:3000'),
 });
 
 const parsedEnvVariables = envVariablesSchema.safeParse(process.env);
